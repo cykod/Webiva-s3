@@ -1,0 +1,12 @@
+<div class='admin_content'>
+
+<% cms_form_for :options, @options, :html => {:class =>'admin_form' } do |f| -%>
+
+<%= f.text_field :access_key_id %>
+<%= f.text_field :secret_access_key %>
+<%= f.text_field :bucket %>
+<%= f.submit_tag 'Save' %>
+
+<% end -%>
+
+</div>
