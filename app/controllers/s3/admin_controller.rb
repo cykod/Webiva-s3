@@ -7,7 +7,7 @@ class S3::AdminController < ModuleController
            
   register_handler :website, :file,  "S3::DomainFileSupport"
                   
-  
+  register_handler :page, :after_request, "S3::RequestHandler"
 
   def options
   
