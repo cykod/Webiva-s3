@@ -9,6 +9,7 @@ class S3::RequestHandler
 
   def after_request(output)
     if output.page? && @controller.request.ssl?
+      output.head = output.head.to_s.gsub(/http\:\/\/([a-z\-0-9A-Z]+)\.s3\.amazonaws\.com/,"https://\\1.s3.amazonaws.com")
       
       for i in (0..output.body.length)
         if(output.body[i].is_a?(String))
