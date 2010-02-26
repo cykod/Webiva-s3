@@ -1,0 +1,12 @@
+Adds S3 as a file storage option into Webiva.
+
+To use this module - activate it and enter your S3 credentials and choose a bucket.
+
+Then go to Options -> Website Configuration -> Files and enable the S3 option and choose which files to host where.
+
+
+TODO:
+
+* Cloudfront support
+* Spec's 
+* RTMP handling for FLV and other video formats
