@@ -5,21 +5,55 @@ class S3::DomainFileSupport
   
 
   def self.website_file_handler_info
-    { :name => 'S3 File Support'  }
+    { 
+      :name => 'S3 File Support',
+    }
+  end
+
+  def self.create_connection(cls=nil)
+    opts =  S3::AdminController.module_options
+
+    if !AWS::S3::Base.connected?
+      AWS::S3::Base.establish_connection!(
+                                :access_key_id     => opts.access_key_id,
+                                :secret_access_key => opts.secret_access_key
+                                )
+    
+    end
+
+    # Let us derive from other classes as well (i.e. when we need a bucket)
+    current_aws_class = "Aws" + DomainModel.active_domain_db.camelcase
+    cls = Class.new( cls || AWS::S3::S3Object)
+
+    cobj = cls.class_eval do
+      class << self; self; end
+    end
+    cobj.send(:define_method,:name) { current_aws_class }
+    cobj.send(:define_method,:bucket) {  opts.bucket }
+
+    cls.current_bucket = opts.bucket
+
+    # Need to connect at the base object
+    
+    cls.establish_connection!(
+      :access_key_id     => opts.access_key_id,
+      :secret_access_key => opts.secret_access_key
+    )
+    cls
   end
   
   
-  def initialize(df)
-    self.class.connect
+  def initialize(connection,df)
+    @connection = connection
     @df = df
   end
   
   # Copy local files to the remote server
-  def copy_remote!()
+  def copy_remote!(size=nil)
     begin
-      file_sizes.each do |size|
-        AWS::S3::S3Object.store(@df.filename_relative_path(size),
-                                open(@df.filename_with_thumbs(size)),@@bucket, 
+      (size ? [ size ] : file_sizes).each do |size|
+        @connection.store(@df.prefixed_filename(size),
+                                open(@df.local_filename(size)), 
                                 :access => @df.private? ? :private : :public_read )
       end
       return true
@@ -29,17 +63,42 @@ class S3::DomainFileSupport
     end
     
   end
+
+  def destroy_thumbs!(size=nil)
+     (size ? [ size ] : file_sizes).each do |size|
+      # don't destroy the original(yet)
+      begin
+        @connection.delete(@df.prefixed_filename(size)) if size 
+      rescue Exception => e
+        # Chomp all
+      end
+    end
+  end
+
+  def revision_support; true; end
+
+  def create_remote_version!(version)
+    @connection.store(version.prefixed_filename,open(version.abs_filename),:access => :private)
+    return true
+  end
   
-  
+  def destroy_remote_version!(version)
+    @connection.delete(version.prefixed_filename)
+  end
+
+  def version_url(version)
+    @connection.url_for(version.prefixed_filename).gsub("http://s3.amazonaws.com/#{@connection.bucket}/","http://#{@connection.bucket}.s3.amazonaws.com/")
+  end
+
   # Download the files and put them in a regular directory
-  def copy_local!()
-    file_sizes.each do |size|
-      filename = @df.filename_with_thumbs(size)
+  def copy_local!(dest_size=nil)
+    (dest_size ? [dest_size] : file_sizes).each do |size|
+      filename = @df.local_filename(size)
       if(!File.exists?(filename)) # Only do it if the file doesn't exist locally
-        dir_name = File.dirname(@df.absolute_file_path(size))
+        dir_name = File.dirname(filename)
         FileUtils.mkpath(dir_name) if(!File.exists?(dir_name))
-        open(@df.filename(size),'w') do |file|
-          AWS::S3::S3Object.stream(@df.filename_relative_path(size),@@bucket) { |chunk| file.write chunk }
+        open(filename,'w') do |file|
+          @connection.stream(@df.prefixed_filename(size)) { |chunk| file.write chunk }
         end
       end
     end
@@ -47,21 +106,39 @@ class S3::DomainFileSupport
   
   def destroy_remote!()
     file_sizes.each do |size|
-      AWS::S3::S3Object.delete(@df.filename_relative_path(size),@@bucket)
+      begin
+        @connection.delete(@df.prefixed_filename(size))
+      rescue Exception => e
+        # Chomp
+      end
     end  
   end
   
   
-  def make_private!(value)
-    # TO DO - Change ACL
+  
+  def update_private!(value)
+    # Get the bucket policy (which is owner read only)
+    policy = AWS::S3::Bucket.acl(@connection.bucket)
+    if !value
+      policy.grants << AWS::S3::ACL::Grant.grant(:public_read)
+    end
+    file_sizes.each do |size|
+      @connection.acl(@df.prefixed_filename(size),policy)
+    end
+    if value && !@df.private?
+       FileUtils.rm_rf(@df.abs_storage_directory)
+    end
+    @df.update_attribute(:private,value)
   end
+
   
   def url(size=nil)
     # return the normal directory structure  
     if @df.private?
-      AWS::S3::S3Object.url_for(@df.filename_relative_path(size),@@bucket).gsub("http://s3.amazonaws.com/#{@@bucket}/","http://#{@@bucket}.s3.amazonaws.com/")
+      @connection.url_for(@df.prefixed_filename(size)).gsub("http://s3.amazonaws.com/#{@connection.bucket}/","http://#{@connection.bucket}.s3.amazonaws.com/")
     else
-      AWS::S3::S3Object.url_for(@df.filename_relative_path(size),@@bucket,:authenticated => false).gsub("http://s3.amazonaws.com/#{@@bucket}/","http://#{@@bucket}.s3.amazonaws.com/")
+      # "http://#{@connection.bucket}.s3.amazonaws.com/#{@df.prefixed_filename(size)}" 
+      @connection.url_for(@df.prefixed_filename(size),:authenticated => false).gsub("http://s3.amazonaws.com/#{@connection.bucket}/","http://#{@connection.bucket}.s3.amazonaws.com/")
     end
   end
   
@@ -70,28 +147,14 @@ class S3::DomainFileSupport
   end
 
   def self.validate_bucket(options=nil)
-    begin
-      self.connect(options)
-      buckets = AWS::S3::Bucket.list.collect(&:name)
-      if(!buckets.include?(@@bucket))
-        AWS::S3::Bucket.create(@@bucket)
-      end
-      return true
-    rescue Exception => e
-      return false
+    cls = create_connection(AWS::S3::Bucket)
+    buckets = cls.list.collect(&:name)
+    if(!buckets.include?(@connection.bucket))
+      cls.create(@connection.bucket)
     end
+    return true
   end
 
-  def self.connect(options = nil)
-    opts = options || S3::AdminController.module_options
-    AWS::S3::Base.establish_connection!(
-      :access_key_id     => opts.access_key_id,
-      :secret_access_key => opts.secret_access_key
-    )
-    @@bucket = opts.bucket
-
-  end
-  
   protected
   
   def file_sizes
