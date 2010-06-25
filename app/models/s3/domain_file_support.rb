@@ -10,20 +10,21 @@ class S3::DomainFileSupport
     }
   end
 
-  def self.create_connection(cls=nil)
-    opts =  S3::AdminController.module_options
+  def self.create_connection(cls=nil, opts=nil)
+    cls ||= AWS::S3::S3Object
+    opts ||= S3::AdminController.module_options
 
     if !AWS::S3::Base.connected?
-      AWS::S3::Base.establish_connection!(
-                                :access_key_id     => opts.access_key_id,
-                                :secret_access_key => opts.secret_access_key
-                                )
+      AWS::S3::Base.establish_connection!(:persistent => false,
+                                          :access_key_id => opts.access_key_id,
+                                          :secret_access_key => opts.secret_access_key
+                                          )
     
     end
 
     # Let us derive from other classes as well (i.e. when we need a bucket)
-    current_aws_class = "Aws" + DomainModel.active_domain_db.camelcase
-    cls = Class.new( cls || AWS::S3::S3Object)
+    current_aws_class = cls.to_s + '::' + DomainModel.active_domain_db.camelcase
+    cls = Class.new( cls )
 
     cobj = cls.class_eval do
       class << self; self; end
@@ -39,6 +40,7 @@ class S3::DomainFileSupport
       :access_key_id     => opts.access_key_id,
       :secret_access_key => opts.secret_access_key
     )
+
     cls
   end
   
@@ -147,11 +149,9 @@ class S3::DomainFileSupport
   end
 
   def self.validate_bucket(options=nil)
-    cls = create_connection(AWS::S3::Bucket)
-    buckets = cls.list.collect(&:name)
-    if(!buckets.include?(@connection.bucket))
-      cls.create(@connection.bucket)
-    end
+    conn = create_connection(AWS::S3::Bucket, options)
+    buckets = conn.list.collect(&:name)
+    conn.create(options.bucket) unless buckets.include?(options.bucket)
     return true
   end
 
