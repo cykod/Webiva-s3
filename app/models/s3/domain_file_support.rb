@@ -11,37 +11,7 @@ class S3::DomainFileSupport
   end
 
   def self.create_connection(cls=nil, opts=nil)
-    cls ||= AWS::S3::S3Object
-    opts ||= S3::AdminController.module_options
-
-    if !AWS::S3::Base.connected?
-      AWS::S3::Base.establish_connection!(:persistent => false,
-                                          :access_key_id => opts.access_key_id,
-                                          :secret_access_key => opts.secret_access_key
-                                          )
-    
-    end
-
-    # Let us derive from other classes as well (i.e. when we need a bucket)
-    current_aws_class = cls.to_s + '::' + DomainModel.active_domain_db.camelcase
-    cls = Class.new( cls )
-
-    cobj = cls.class_eval do
-      class << self; self; end
-    end
-    cobj.send(:define_method,:name) { current_aws_class }
-    cobj.send(:define_method,:bucket) {  opts.bucket }
-
-    cls.current_bucket = opts.bucket
-
-    # Need to connect at the base object
-    
-    cls.establish_connection!(
-      :access_key_id     => opts.access_key_id,
-      :secret_access_key => opts.secret_access_key
-    )
-
-    cls
+    S3::AdminController.module_options.connection
   end
   
   
@@ -55,7 +25,7 @@ class S3::DomainFileSupport
     begin
       (size ? [ size ] : file_sizes).each do |size|
         @connection.store(@df.prefixed_filename(size),
-                                open(@df.local_filename(size)), 
+                                File.open(@df.local_filename(size)), 
                                 :access => @df.private? ? :private : :public_read )
       end
       return true
@@ -80,7 +50,7 @@ class S3::DomainFileSupport
   def revision_support; true; end
 
   def create_remote_version!(version)
-    @connection.store(version.prefixed_filename,open(version.abs_filename),:access => :private)
+    @connection.store(version.prefixed_filename,File.open(version.abs_filename),:access => :private)
     return true
   end
   
@@ -99,7 +69,7 @@ class S3::DomainFileSupport
       if(!File.exists?(filename)) # Only do it if the file doesn't exist locally
         dir_name = File.dirname(filename)
         FileUtils.mkpath(dir_name) if(!File.exists?(dir_name))
-        open(filename,'w') do |file|
+        File.open(filename,'w') do |file|
           @connection.stream(@df.prefixed_filename(size)) { |chunk| file.write chunk }
         end
       end
@@ -120,7 +90,7 @@ class S3::DomainFileSupport
   
   def update_private!(value)
     # Get the bucket policy (which is owner read only)
-    policy = AWS::S3::Bucket.acl(@connection.bucket)
+    policy = @connection.acl
     if !value
       policy.grants << AWS::S3::ACL::Grant.grant(:public_read)
     end

@@ -41,6 +41,7 @@ class S3::Connection
     return false unless self.valid_key?(key)
     self.class.infer_content_type!(key, options)
     self.request(:put, self.path(key), options, data)
+    AWS::S3::S3Object::Response.new(@response)
   end
 
   def delete(key, options={})
@@ -73,12 +74,10 @@ class S3::Connection
       name   = nil
     end
 
-    path = "/#{self.bucket}?acl"
-    respond_with AWS::S3::ACL::Policy::Response do
-      policy ? self.request(:put, path, {}, policy.to_xml) : self.request(:get, path, policy)
-      policy_response = AWS::S3::ACL::Policy::Response.new(@response)
-      policy ? policy_response : AWS::S3::ACL::Policy.new(policy_response)
-    end
+    path = name ? "/#{self.path(name)}?acl" : "/#{self.bucket}?acl"
+    policy ? self.request(:put, path, {}, policy.to_xml) : self.request(:get, path)
+    policy_response = AWS::S3::ACL::Policy::Response.new(@response)
+    policy ? policy_response : AWS::S3::ACL::Policy.new(policy_response.policy)
   end
 
   def valid_key?(key)
