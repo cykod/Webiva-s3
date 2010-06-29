@@ -19,17 +19,31 @@ class S3::Connection
 
   def buckets(res=nil, opts={})
     return @buckets if @buckets && opts[:reload].nil?
-    res ||= self.request(:get, '/')
-    return [] unless Net::HTTPSuccess === res
-    service_response = AWS::S3::Service::Response.new res
+    self.request(:get, '/')
+    return [] unless Net::HTTPSuccess === @response
+    service_response = AWS::S3::Service::Response.new @response
     @buckets = service_response.buckets
   end
 
   def create_bucket(options={})
-    res = self.request(:put, "/#{self.bucket}", options)
-    return false unless Net::HTTPSuccess === res
-    bucket_response = AWS::S3::Bucket::Response.new res
-    return bucket_response.success?
+    self.request(:put, "/#{self.bucket}", options)
+    return false unless Net::HTTPSuccess === @response
+    AWS::S3::Bucket::Response.new(@response).success?
+  end
+
+  def delete_bucket(options={})
+    self.objects.each { |obj| self.delete(obj.key) }
+    self.request(:delete, "/#{self.bucket}", options)
+    return false unless Net::HTTPSuccess === @response
+    AWS::S3::Bucket::Response.new(@response).success?
+  end
+
+  def objects(options={})
+    return @objects if @objects && options.delete(:reload).nil?
+    self.request(:get, "/#{self.bucket}", options)
+    return [] unless Net::HTTPSuccess === @response
+    bucket = AWS::S3::Bucket.new(AWS::S3::Bucket::Response.new(@response).bucket)
+    @objects = bucket.object_cache
   end
 
   def self.valid_bucket_name?(bucket)
