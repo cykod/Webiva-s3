@@ -1,0 +1,17 @@
+<div class='admin_content'>
+
+<% if @options.cloud_front_status.nil? || @options.cloud_front_status == 'Deployed' -%>
+  <% cms_form_for :options, @options, :html => {:class =>'admin_form' } do |f| -%>
+    <%= f.text_field :cname %>
+    <%= render :partial => 'cloud_front_options' %>
+    <%= f.submit_tag 'Setup' %>
+  <% end -%>
+<% else -%>
+  <p><%= "Clound Front setup is %s. Please wait for it to finish before continuing." / @options.cloud_front_status.underscore.humanize.downcase %></p>
+<script>
+setTimeout('document.location = document.location;', 10000);
+</script>
+<% end -%>
+
+</div>
+
