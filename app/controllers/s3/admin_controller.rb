@@ -30,37 +30,30 @@ class S3::AdminController < ModuleController
     def validate
       if self.access_key_id && self.secret_access_key && self.bucket
         # test the connection by making a request for the buckets
-        res = self.connection.request(:get, '/')
-        if Net::HTTPSuccess === res
-          bucket_info = self.buckets(res).find { |info| info['name'] == self.bucket }
-          unless bucket_info
-            if S3::Connection.valid_bucket_name?(self.bucket)
-              if self.create_bucket
-                self.errors.add(:bucket, 'was not found') unless self.buckets(nil, :reload => true).find { |info| info['name'] == self.bucket }
-              else
-                self.errors.add(:bucket, 'failed to create bucket')
-              end
-            else
-              self.errors.add(:bucket, 'name is invalid')
-            end
-          end
-        else
+        buckets = nil
+        begin
+          buckets = self.connection.buckets
+        rescue RightAws::AwsError
           self.errors.add(:access_key_id, 'is invalid')
           self.errors.add(:secret_access_key, 'is invalid')
+        end
+
+        if buckets
+          if S3::Bucket.valid_bucket_name?(self.bucket)
+            begin
+              self.connection.bucket
+            rescue RightAws::AwsError
+              self.errors.add(:bucket, 'failed to create bucket')
+            end
+          else
+            self.errors.add(:bucket, 'name is invalid')
+          end
         end
       end
     end
 
     def connection
-      @connection ||= S3::Connection.new :access_key_id => self.access_key_id, :secret_access_key => self.secret_access_key, :bucket => self.bucket
-    end
-
-    def buckets(res=nil, opts={})
-      self.connection.buckets(res, opts)
-    end
-
-    def create_bucket(options={})
-      self.connection.create_bucket(options)
+      @connection ||= S3::Bucket.new self.access_key_id, self.secret_access_key, self.bucket
     end
   end
 

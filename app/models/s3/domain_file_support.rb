@@ -1,4 +1,3 @@
-require 'aws/s3'
 require 'fileutils'
 
 class S3::DomainFileSupport 
@@ -13,34 +12,37 @@ class S3::DomainFileSupport
   def self.create_connection(cls=nil, opts=nil)
     S3::AdminController.module_options.connection
   end
-  
-  
+
   def initialize(connection,df)
     @connection = connection
     @df = df
   end
-  
+
+  def prefixed_filename(size)
+    prefix = @df.version_count > 0 ? "#{@df.version_count}/" : ''
+    @df.prefixed_filename(size, :prefix => prefix)
+  end
+
   # Copy local files to the remote server
   def copy_remote!(size=nil)
     begin
       (size ? [ size ] : file_sizes).each do |size|
-        @connection.store(@df.prefixed_filename(size),
-                                File.open(@df.local_filename(size)), 
-                                :access => @df.private? ? :private : :public_read )
+        @connection.store(self.prefixed_filename(size),
+                                File.open(@df.local_filename(size)),
+                                @df.private? ? 'private' : 'public-read') if File.exists?(@df.local_filename(size))
       end
       return true
     rescue Exception => e
       raise e
       return false
     end
-    
   end
 
   def destroy_thumbs!(size=nil)
      (size ? [ size ] : file_sizes).each do |size|
       # don't destroy the original(yet)
       begin
-        @connection.delete(@df.prefixed_filename(size)) if size 
+        @connection.delete(self.prefixed_filename(size)) if size 
       rescue Exception => e
         # Chomp all
       end
@@ -50,7 +52,7 @@ class S3::DomainFileSupport
   def revision_support; true; end
 
   def create_remote_version!(version)
-    @connection.store(version.prefixed_filename,File.open(version.abs_filename),:access => :private)
+    @connection.store(version.prefixed_filename,File.open(version.abs_filename),'private')
     return true
   end
   
@@ -59,7 +61,7 @@ class S3::DomainFileSupport
   end
 
   def version_url(version)
-    @connection.url_for(version.prefixed_filename).gsub("http://s3.amazonaws.com/#{@connection.bucket}/","http://#{@connection.bucket}.s3.amazonaws.com/")
+    @connection.url_for(version.prefixed_filename, :private => true)
   end
 
   # Download the files and put them in a regular directory
@@ -69,9 +71,7 @@ class S3::DomainFileSupport
       if(!File.exists?(filename)) # Only do it if the file doesn't exist locally
         dir_name = File.dirname(filename)
         FileUtils.mkpath(dir_name) if(!File.exists?(dir_name))
-        File.open(filename,'w') do |file|
-          @connection.stream(@df.prefixed_filename(size)) { |chunk| file.write chunk }
-        end
+        @connection.copy_local! self.prefixed_filename(size), filename
       end
     end
   end
@@ -79,23 +79,21 @@ class S3::DomainFileSupport
   def destroy_remote!()
     file_sizes.each do |size|
       begin
-        @connection.delete(@df.prefixed_filename(size))
+        @connection.delete(self.prefixed_filename(size))
       rescue Exception => e
         # Chomp
       end
     end  
   end
-  
-  
-  
+
   def update_private!(value)
     # Get the bucket policy (which is owner read only)
-    policy = @connection.acl
-    if !value
-      policy.grants << AWS::S3::ACL::Grant.grant(:public_read)
-    end
     file_sizes.each do |size|
-      @connection.acl(@df.prefixed_filename(size),policy)
+      if value
+        @connection.make_private! self.prefixed_filename(size)
+      else
+        @connection.make_public! self.prefixed_filename(size)
+      end
     end
     if value && !@df.private?
        FileUtils.rm_rf(@df.abs_storage_directory)
@@ -105,24 +103,11 @@ class S3::DomainFileSupport
 
   
   def url(size=nil)
-    # return the normal directory structure  
-    if @df.private?
-      @connection.url_for(@df.prefixed_filename(size)).gsub("http://s3.amazonaws.com/#{@connection.bucket}/","http://#{@connection.bucket}.s3.amazonaws.com/")
-    else
-      # "http://#{@connection.bucket}.s3.amazonaws.com/#{@df.prefixed_filename(size)}" 
-      @connection.url_for(@df.prefixed_filename(size),:authenticated => false).gsub("http://s3.amazonaws.com/#{@connection.bucket}/","http://#{@connection.bucket}.s3.amazonaws.com/")
-    end
+    @connection.url_for self.prefixed_filename(size), :private => @df.private?
   end
   
   def full_url(size=nil)
     self.url(size)
-  end
-
-  def self.validate_bucket(options=nil)
-    conn = create_connection(AWS::S3::Bucket, options)
-    buckets = conn.list.collect(&:name)
-    conn.create(options.bucket) unless buckets.include?(options.bucket)
-    return true
   end
 
   protected

@@ -3,4 +3,6 @@
 
 webiva_remove_load_paths(__FILE__)
 
-config.gem 'aws-s3', :lib =>  'aws/s3'
+require 'net/http'
+config.gem 'right_aws'
+
