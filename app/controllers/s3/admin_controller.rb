@@ -7,7 +7,7 @@ class S3::AdminController < ModuleController
            
   register_handler :website, :file,  "S3::DomainFileSupport"
                   
-  register_handler :page, :after_request, "S3::RequestHandler"
+  register_handler :page, :post_process, "S3::RequestHandler"
 
   def options
    cms_page_info [ ["Options",url_for(:controller => '/options') ], ["Modules",url_for(:controller => "/modules")], "S3 Options"], "options"
@@ -15,9 +15,17 @@ class S3::AdminController < ModuleController
     @options = Configuration.get_config_model(ModuleOptions,params[:options])
     
     if request.post? && params[:options] && @options.valid?
-      @options.clear_cloud_front_settings unless @options.valid_cloud_front_settings?
+      if @options.enable_cloud_front
+        @options.save_cloud_front_settings
+        Configuration.set_config_model(@options)
+        redirect_to :action => 'cloud_front_setup'
+        return
+      else
+        @options.clear_cloud_front_settings
+      end
+
       Configuration.set_config_model(@options)
-      flash[:notice] = "Updated S3 module settings".t 
+      flash[:notice] = "Updated S3 module settings".t
       redirect_to :controller => '/modules'
       return
     end
@@ -27,25 +35,19 @@ class S3::AdminController < ModuleController
     cms_page_info [ ["Options",url_for(:controller => '/options') ], ["Modules",url_for(:controller => "/modules")], ["S3 Options", url_for(:action => 'options')], "Cloud Front Setup"], "options"
 
     @options = Configuration.get_config_model(ModuleOptions,params[:options])
+
+    return redirect_to :action => 'options' unless @options.enable_cloud_front
+
     unless @options.valid?
       flash[:notice] = "Invalid S3 settings".t 
       redirect_to :action => 'options' 
       return
     end
 
-    begin
-      @options.cloud_front.distributions
-    rescue RightAws::AwsError
-      flash[:notice] = 'AWS Cloud Front subscription is required for this access key'.t
-      redirect_to :action => 'options' 
-      return
-    end
-
     if @options.cloud_front_distribution_info && @options.cloud_front_distribution_info[:status] == 'InProgress' && @options.cloud_front.deployed?
       @options.cloud_front_distribution_info = @options.cloud_front.distribution
-      @options.enable_cloud_front = true
       Configuration.set_config_model(@options)
-      flash[:notice] = 'AWS Cloud Front is setup'
+      flash[:notice] = "Updated S3 module settings".t
       redirect_to :controller => '/modules'
       return
     end
@@ -89,6 +91,14 @@ class S3::AdminController < ModuleController
             end
           else
             self.errors.add(:bucket, 'name is invalid')
+          end
+
+          if self.enable_cloud_front
+            begin
+              self.cloud_front.distributions
+            rescue RightAws::AwsError
+              self.errors.add(:enable_cloud_front, 'failed. Cloud Front subscription is required for this access key')
+            end
           end
         end
       end
@@ -134,7 +144,6 @@ class S3::AdminController < ModuleController
 
     def save_cloud_front_settings
       if self.cloud_front.save(self.cnames)
-        self.enable_cloud_front = false
         self.cloud_front_distribution_info = self.cloud_front.distribution
         true
       else
@@ -145,7 +154,6 @@ class S3::AdminController < ModuleController
 
     def clear_cloud_front_settings
       self.cloud_front_distribution_info = nil
-      self.enable_cloud_front = nil
       self.cname = nil
     end
 
@@ -159,6 +167,37 @@ class S3::AdminController < ModuleController
 
       # make sure the bucket name is the same
       self.cloud_front.origin == self.cloud_front_origin
+    end
+
+    def host(opts={})
+      return @host if @host
+
+      if self.cname
+        @host = self.cname
+      elsif self.cloud_front_distribution_info && self.cloud_front_distribution_info[:domain_name]
+        @host = self.cloud_front_distribution_info[:domain_name]
+      else
+        @host = self.connection.host
+      end
+    end
+
+    def secure_host
+      @secure_host ||= self.connection.host
+    end
+
+    def url_for(key, options={})
+      if options[:private]
+        self.connection.url_for(key, options)
+      else
+        "http://#{self.host}/#{key}"
+      end
+    end
+
+    def secure_output(str)
+      str = str.gsub("http://#{self.cname}", "https://#{self.secure_host}") if self.cname
+      str = str.gsub("http://#{self.cloud_front_distribution_info[:domain_name]}", "https://#{self.secure_host}") if self.cloud_front_distribution_info && self.cloud_front_distribution_info[:domain_name]
+      str = str.gsub("http://#{self.connection.host}", "https://#{self.secure_host}")
+      str
     end
   end
 

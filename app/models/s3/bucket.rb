@@ -56,8 +56,12 @@ class S3::Bucket
     if options[:private]
       self.s3.interface.get_link(self.name, key)
     else
-      "http://#{self.name}.s3.amazonaws.com/#{key}"
+      "http://#{self.host}/#{key}"
     end
+  end
+
+  def host
+    "#{self.name}.s3.amazonaws.com"
   end
 
   def make_public!(key)

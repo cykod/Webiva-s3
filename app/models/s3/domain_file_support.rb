@@ -61,7 +61,7 @@ class S3::DomainFileSupport
   end
 
   def version_url(version)
-    @connection.url_for(version.prefixed_filename, :private => true)
+    self.url_for(version.prefixed_filename, :private => true)
   end
 
   # Download the files and put them in a regular directory
@@ -103,11 +103,15 @@ class S3::DomainFileSupport
 
   
   def url(size=nil)
-    @connection.url_for self.prefixed_filename(size), :private => @df.private?
+    self.url_for self.prefixed_filename(size), :private => @df.private?
   end
   
   def full_url(size=nil)
     self.url(size)
+  end
+
+  def url_for(key, options={})
+    S3::AdminController.module_options.url_for(key, options)
   end
 
   protected

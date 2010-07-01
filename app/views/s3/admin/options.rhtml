@@ -1,8 +1,9 @@
-<% action_panel do |p| -%>
-  <%= p.link "AWS Cloud Front Settings", :action => 'cloud_front_setup', :icon => 'edit.gif' %>
+<% if @options.enable_cloud_front && @options.cloud_front_distribution_info -%>
+  <% action_panel do |p| -%>
+    <%= p.link "AWS Cloud Front Settings", :action => 'cloud_front_setup', :icon => 'edit.gif' %>
+  <% end -%>
+  <hr/>
 <% end -%>
-
-<hr/>
 
 <div class='admin_content'>
 
@@ -11,9 +12,9 @@
 <%= f.text_field :access_key_id %>
 <%= f.text_field :secret_access_key %>
 <%= f.text_field :bucket %>
+<%= f.check_boxes :enable_cloud_front, [['Use AWS Cloud Front', true]], :label => 'Cloud Front Support', :single => true %>
 
-<% if @options.cloud_front_distribution_info && @options.cloud_front_distribution_info[:status] == 'Deployed' -%>
-  <%= f.check_boxes :enable_cloud_front, [['Use AWS Cloud Front', true]], :label => 'Cloud Front Support', :single => true %>
+<% if @options.enable_cloud_front && @options.cloud_front_distribution_info && @options.cloud_front_distribution_info[:status] == 'Deployed' -%>
   <%= render :partial => 'cloud_front_options' %>
 <% end -%>
 

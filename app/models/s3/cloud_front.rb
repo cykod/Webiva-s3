@@ -39,9 +39,14 @@ class S3::CloudFront
 
   def save(cnames=[])
     begin
-      return self.acf.set_distribution_config(self.distribution[:aws_id], self.distribution.merge(:cnames => cnames, :enabled => true)) if self.distribution
+      if self.distribution
+        return false unless self.acf.set_distribution_config(self.distribution[:aws_id], self.distribution.merge(:cnames => cnames, :enabled => true))
+      else
+        @distribution = self.acf.create_distribution(self.origin, 'Webiva Cloud Front Support', true, cnames)
+        @aws_id = @distribution[:aws_id]
+      end
 
-      @distribution = self.acf.create_distribution(self.origin, 'Webiva Cloud Front Support', true, cnames)
+      @distribution = self.acf.get_distribution(@aws_id)
       return true
     rescue RightAws::AwsError => e
       Rails.logger.error e.to_s
