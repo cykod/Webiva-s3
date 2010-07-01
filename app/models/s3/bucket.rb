@@ -27,10 +27,9 @@ class S3::Bucket
     self.s3.buckets
   end
 
-  # only accept bucket names that can be used as part of the virtual host
   def self.valid_bucket_name?(name)
     # expression taken from AWS::S3::Bucket.validate_name!
-    name =~ /^[-\w.]{3,255}$/
+    name =~ /^[-\w.]{3,255}$/ ? true : false
   end
 
   # Store data on S3
