@@ -306,3 +306,102 @@ RESPONSE
 
   FakeWeb.register_uri(:put, "https://#{bucket}.s3.amazonaws.com:443/#{key}?acl", :response => response)
 end
+
+def fakeweb_cloudfront_distributions_response(origin='my-fake-origin.s3.amazonaws.com', aws_id='EJLGZ1G1CU1BZ')
+  distribution_summary = "<DistributionSummary><Id>#{aws_id}</Id><Status>Deployed</Status><LastModifiedTime>2010-07-01T14:40:34.681Z</LastModifiedTime><DomainName>dcm11y1e1j1bu.cloudfront.net</DomainName><Origin>#{origin}</Origin><Comment>Webiva Cloud Front Support</Comment><Enabled>true</Enabled></DistributionSummary>"
+
+  content_length = 189 + distribution_summary.length
+
+  response = <<-RESPONSE
+HTTP/1.1 200 OK
+x-amzn-RequestId: 1f11111c-1111-11df-1f11-b111d1bba1a1
+Content-Type: text/xml
+  Content-Length: #{content_length}
+Date: Thu, 01 Jul 2010 20:43:31 GMT
+
+<?xml version="1.0"?>
+<DistributionList xmlns="http://cloudfront.amazonaws.com/doc/2010-03-01/"><Marker></Marker><MaxItems>100</MaxItems><IsTruncated>false</IsTruncated>#{distribution_summary}</DistributionList>
+RESPONSE
+
+  FakeWeb.register_uri(:get, "https://cloudfront.amazonaws.com/2010-03-01/distribution", :response => response)
+end
+
+def fakeweb_cloudfront_distribution_response(origin='my-fake-origin.s3.amazonaws.com', aws_id='EJLGZ1G1CU1BZ', status='Deployed')
+  body = "<?xml version=\"1.0\"?>\n<Distribution xmlns=\"http://cloudfront.amazonaws.com/doc/2010-03-01/\"><Id>#{aws_id}</Id><Status>#{status}</Status><LastModifiedTime>2010-07-01T14:40:34.681Z</LastModifiedTime><DomainName>dcm11y1e1j1bu.cloudfront.net</DomainName><DistributionConfig><Origin>#{origin}</Origin><CallerReference>111111111111111111111111</CallerReference><Comment>Webiva Cloud Front Support</Comment><Enabled>true</Enabled></DistributionConfig></Distribution>"
+
+  response = <<-RESPONSE
+HTTP/1.1 200 OK
+x-amzn-RequestId: 1f11111c-1111-11df-1f11-b111d1bba1a1
+ETag: E1VXM1A1PG1JQK
+Content-Type: text/xml
+Content-Length: #{body.length + 1}
+Date: Thu, 01 Jul 2010 20:58:21 GMT
+
+#{body}
+RESPONSE
+
+  FakeWeb.register_uri(:get, "https://cloudfront.amazonaws.com/2010-03-01/distribution/#{aws_id}", :response => response)
+end
+
+def fakeweb_cloudfront_create_distribution_response(origin='my-fake-origin.s3.amazonaws.com', aws_id='EJLGZ1G1CU1BZ')
+  body = "<?xml version=\"1.0\"?>\n<Distribution xmlns=\"http://cloudfront.amazonaws.com/doc/2010-03-01/\"><Id>#{aws_id}</Id><Status>InProgress</Status><LastModifiedTime>2010-07-01T14:40:34.681Z</LastModifiedTime><DomainName>dcm11y1e1j1bu.cloudfront.net</DomainName><DistributionConfig><Origin>#{origin}</Origin><CallerReference>111111111111111111111111</CallerReference><Comment>Webiva Cloud Front Support</Comment><Enabled>true</Enabled></DistributionConfig></Distribution>"
+
+  response = <<-RESPONSE
+HTTP/1.1 200 OK
+x-amzn-RequestId: 1f11111c-1111-11df-1f11-b111d1bba1a1
+ETag: E1VXM1A1PG1JQK
+Content-Type: text/xml
+Content-Length: #{body.length + 1}
+Date: Thu, 01 Jul 2010 20:58:21 GMT
+
+#{body}
+RESPONSE
+
+  FakeWeb.register_uri(:post, "https://cloudfront.amazonaws.com/2010-03-01/distribution", :response => response)
+end
+
+def fakeweb_cloudfront_update_distribution_response(origin='my-fake-origin.s3.amazonaws.com', aws_id='EJLGZ1G1CU1BZ', cname='')
+  status = 'Deployed'
+  body = "<?xml version=\"1.0\"?>\n<Distribution xmlns=\"http://cloudfront.amazonaws.com/doc/2010-03-01/\"><Id>#{aws_id}</Id><Status>#{status}</Status><LastModifiedTime>2010-07-01T14:40:34.681Z</LastModifiedTime><DomainName>dcm11y1e1j1bu.cloudfront.net</DomainName><DistributionConfig><Origin>#{origin}</Origin><CallerReference>111111111111111111111111</CallerReference><Comment>Webiva Cloud Front Support</Comment><Enabled>true</Enabled></DistributionConfig></Distribution>"
+
+  response = <<-RESPONSE
+HTTP/1.1 200 OK
+x-amzn-RequestId: 1f11111c-1111-11df-1f11-b111d1bba1a1
+ETag: E1VXM1A1PG1JQK
+Content-Type: text/xml
+Content-Length: #{body.length + 1}
+Date: Thu, 01 Jul 2010 20:58:21 GMT
+
+#{body}
+RESPONSE
+
+  body = "<?xml version=\"1.0\"?>\n<Distribution xmlns=\"http://cloudfront.amazonaws.com/doc/2010-03-01/\"><Id>#{aws_id}</Id><Status>InProgress</Status><LastModifiedTime>2010-07-01T14:40:34.681Z</LastModifiedTime><DomainName>dcm11y1e1j1bu.cloudfront.net</DomainName><DistributionConfig><Origin>#{origin}</Origin><CallerReference>111111111111111111111111</CallerReference><CNAME>#{cname}</CNAME><Comment>Webiva Cloud Front Support</Comment><Enabled>true</Enabled></DistributionConfig></Distribution>"
+
+  response2 = <<-RESPONSE
+HTTP/1.1 200 OK
+x-amzn-RequestId: 1f11111c-1111-11df-1f11-b111d1bba1a1
+ETag: E1VXM1A1PG1JQK
+Content-Type: text/xml
+Content-Length: #{body.length + 1}
+Date: Thu, 01 Jul 2010 20:58:21 GMT
+
+#{body}
+RESPONSE
+
+  FakeWeb.register_uri(:get, "https://cloudfront.amazonaws.com/2010-03-01/distribution/#{aws_id}", [{:response => response}, {:response => response2}])
+
+  body = "<?xml version=\"1.0\"?>\n<Distribution xmlns=\"http://cloudfront.amazonaws.com/doc/2010-03-01/\"><Id>#{aws_id}</Id><Status>InProgress</Status><LastModifiedTime>2010-07-01T14:40:34.681Z</LastModifiedTime><DomainName>dcm11y1e1j1bu.cloudfront.net</DomainName><DistributionConfig><Origin>#{origin}</Origin><CallerReference>111111111111111111111111</CallerReference><CNAME>#{cname}</CNAME><Comment>Webiva Cloud Front Support</Comment><Enabled>true</Enabled></DistributionConfig></Distribution>"
+
+  response = <<-RESPONSE
+HTTP/1.1 200 OK
+x-amzn-RequestId: 1f11111c-1111-11df-1f11-b111d1bba1a1
+ETag: E1VXM1A1PG1JQK
+Content-Type: text/xml
+Content-Length: #{body.length + 1}
+Date: Thu, 01 Jul 2010 20:58:21 GMT
+
+#{body}
+RESPONSE
+
+  FakeWeb.register_uri(:put, "https://cloudfront.amazonaws.com/2010-03-01/distribution/#{aws_id}/config", :response => response)
+end

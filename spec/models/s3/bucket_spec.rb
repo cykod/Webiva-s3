@@ -48,7 +48,7 @@ describe S3::Bucket do
   describe "Working with a bucket" do
     before(:each) do
       fakeweb_s3_valid_credentials_response
-      @bucket = S3::Bucket.new 'access_key', 'secret', 'my-bucket'      
+      @bucket = S3::Bucket.new 'access_key', 'secret', 'my-bucket'
     end
 
     it "should be able to store a file" do
