@@ -49,7 +49,7 @@ Server: AmazonS3
 <Error><Code>AccessDenied</Code><Message>Access Denied</Message><RequestId>111B1111111D11C1</RequestId><HostId>mCbEs/1rjEG1tAkTH1qlOV11JiMj1Wh+CmD1JQmQsvCJVk1qH1vO/guezo1rAeP1</HostId></Error>
 RESPONSE
 
-  FakeWeb.register_uri(:get, "https://#{bucket}.s3.amazonaws.com:443/#{key}", :response => response)
+  FakeWeb.register_uri(:get, "https://#{bucket}.s3.amazonaws.com:443/#{CGI.escape(key)}", :response => response)
 end
 
 def fakeweb_s3_missing_bucket_response(bucket)
@@ -142,7 +142,7 @@ Server: AmazonS3
 
 RESPONSE
 
-  FakeWeb.register_uri(:put, "https://#{bucket}.s3.amazonaws.com:443/#{key}", :response => response)
+  FakeWeb.register_uri(:put, "https://#{bucket}.s3.amazonaws.com:443/#{CGI.escape(key)}", :response => response)
 end
 
 def fakeweb_s3_delete_file_response(bucket, key)
@@ -156,10 +156,10 @@ Transfer-Encoding: chunked
 Server: AmazonS3
 
 <?xml version="1.0" encoding="UTF-8"?>
-<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Name>webiva-doug2</Name><Prefix>test.txt</Prefix><Marker></Marker><MaxKeys>1000</MaxKeys><IsTruncated>false</IsTruncated><Contents><Key>test.txt</Key><LastModified>2010-07-01T19:35:26.000Z</LastModified><ETag>&quot;1c11c1cacf1f1d111fab1ef1e1f1a1ee&quot;</ETag><Size>242</Size><Owner><ID>111111a11111b1c111fa11a111111ea11111d1111d11bed11a11eb11111de111</ID><DisplayName>cykod</DisplayName></Owner><StorageClass>STANDARD</StorageClass></Contents></ListBucketResult>
+<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Name>webiva-doug2</Name><Prefix>#{key}</Prefix><Marker></Marker><MaxKeys>1000</MaxKeys><IsTruncated>false</IsTruncated><Contents><Key>#{key}</Key><LastModified>2010-07-01T19:35:26.000Z</LastModified><ETag>&quot;1c11c1cacf1f1d111fab1ef1e1f1a1ee&quot;</ETag><Size>242</Size><Owner><ID>111111a11111b1c111fa11a111111ea11111d1111d11bed11a11eb11111de111</ID><DisplayName>myfakecompany</DisplayName></Owner><StorageClass>STANDARD</StorageClass></Contents></ListBucketResult>
 RESPONSE
 
-  FakeWeb.register_uri(:get, "https://#{bucket}.s3.amazonaws.com:443/?prefix=#{key}", :response => response)
+  FakeWeb.register_uri(:get, "https://#{bucket}.s3.amazonaws.com:443/?prefix=#{CGI.escape(key)}", :response => response)
 
   response = <<-RESPONSE
 HTTP/1.1 204 No Content
@@ -170,7 +170,7 @@ Server: AmazonS3
 
 RESPONSE
 
-  FakeWeb.register_uri(:delete, "https://#{bucket}.s3.amazonaws.com:443/#{key}", :response => response)
+  FakeWeb.register_uri(:delete, "https://#{bucket}.s3.amazonaws.com:443/#{CGI.escape(key)}", :response => response)
 end
 
 def fakeweb_s3_get_file_response(bucket, key)
@@ -184,10 +184,10 @@ Transfer-Encoding: chunked
 Server: AmazonS3
 
 <?xml version="1.0" encoding="UTF-8"?>
-<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Name>webiva-doug2</Name><Prefix>test.txt</Prefix><Marker></Marker><MaxKeys>1000</MaxKeys><IsTruncated>false</IsTruncated><Contents><Key>test.txt</Key><LastModified>2010-07-01T19:35:26.000Z</LastModified><ETag>&quot;1c11c1cacf1f1d111fab1ef1e1f1a1ee&quot;</ETag><Size>242</Size><Owner><ID>111111a11111b1c111fa11a111111ea11111d1111d11bed11a11eb11111de111</ID><DisplayName>cykod</DisplayName></Owner><StorageClass>STANDARD</StorageClass></Contents></ListBucketResult>
+<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Name>webiva-doug2</Name><Prefix>#{key}</Prefix><Marker></Marker><MaxKeys>1000</MaxKeys><IsTruncated>false</IsTruncated><Contents><Key>#{key}</Key><LastModified>2010-07-01T19:35:26.000Z</LastModified><ETag>&quot;1c11c1cacf1f1d111fab1ef1e1f1a1ee&quot;</ETag><Size>242</Size><Owner><ID>111111a11111b1c111fa11a111111ea11111d1111d11bed11a11eb11111de111</ID><DisplayName>myfakecompany</DisplayName></Owner><StorageClass>STANDARD</StorageClass></Contents></ListBucketResult>
 RESPONSE
 
-  FakeWeb.register_uri(:get, "https://#{bucket}.s3.amazonaws.com:443/?prefix=#{key}", :response => response)
+  FakeWeb.register_uri(:get, "https://#{bucket}.s3.amazonaws.com:443/?prefix=#{CGI.escape(key)}", :response => response)
 
   response = <<-RESPONSE
 HTTP/1.1 200 OK
@@ -202,7 +202,7 @@ Server: AmazonS3
 
 RESPONSE
 
-  FakeWeb.register_uri(:head, "https://#{bucket}.s3.amazonaws.com:443/#{key}", :response => response)
+  FakeWeb.register_uri(:head, "https://#{bucket}.s3.amazonaws.com:443/#{CGI.escape(key)}", :response => response)
 
   response = <<-RESPONSE
 HTTP/1.1 200 OK
@@ -218,7 +218,7 @@ Server: AmazonS3
 Test
 RESPONSE
 
-  FakeWeb.register_uri(:get, "https://#{bucket}.s3.amazonaws.com:443/#{key}", :response => response)
+  FakeWeb.register_uri(:get, "https://#{bucket}.s3.amazonaws.com:443/#{CGI.escape(key)}", :response => response)
 end
 
 def fakeweb_s3_make_file_public_response(bucket, key)
@@ -232,10 +232,10 @@ Transfer-Encoding: chunked
 Server: AmazonS3
 
 <?xml version="1.0" encoding="UTF-8"?>
-<AccessControlPolicy xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Owner><ID>111111a11111b1c111fa11a111111ea11111d1111d11bed11a11eb11111de111</ID><DisplayName>cykod</DisplayName></Owner><AccessControlList><Grant><Grantee xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="CanonicalUser"><ID>111111a11111b1c111fa11a111111ea11111d1111d11bed11a11eb11111de111</ID><DisplayName>myfakecompany</DisplayName></Grantee><Permission>FULL_CONTROL</Permission></Grant></AccessControlList></AccessControlPolicy>
+<AccessControlPolicy xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Owner><ID>111111a11111b1c111fa11a111111ea11111d1111d11bed11a11eb11111de111</ID><DisplayName>myfakecompany</DisplayName></Owner><AccessControlList><Grant><Grantee xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="CanonicalUser"><ID>111111a11111b1c111fa11a111111ea11111d1111d11bed11a11eb11111de111</ID><DisplayName>myfakecompany</DisplayName></Grantee><Permission>FULL_CONTROL</Permission></Grant></AccessControlList></AccessControlPolicy>
 RESPONSE
 
-  FakeWeb.register_uri(:get, "https://#{bucket}.s3.amazonaws.com:443/#{key}?acl", :response => response)
+  FakeWeb.register_uri(:get, "https://#{bucket}.s3.amazonaws.com:443/#{CGI.escape(key)}?acl", :response => response)
 
   response = <<-RESPONSE
 HTTP/1.1 200 OK
@@ -247,10 +247,10 @@ Transfer-Encoding: chunked
 Server: AmazonS3
 
 <?xml version="1.0" encoding="UTF-8"?>
-<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Name>webiva-doug2</Name><Prefix>test.txt</Prefix><Marker></Marker><MaxKeys>1000</MaxKeys><IsTruncated>false</IsTruncated><Contents><Key>test.txt</Key><LastModified>2010-07-01T19:35:26.000Z</LastModified><ETag>&quot;1c11c1cacf1f1d111fab1ef1e1f1a1ee&quot;</ETag><Size>242</Size><Owner><ID>111111a11111b1c111fa11a111111ea11111d1111d11bed11a11eb11111de111</ID><DisplayName>cykod</DisplayName></Owner><StorageClass>STANDARD</StorageClass></Contents></ListBucketResult>
+<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Name>webiva-doug2</Name><Prefix>#{key}</Prefix><Marker></Marker><MaxKeys>1000</MaxKeys><IsTruncated>false</IsTruncated><Contents><Key>#{key}</Key><LastModified>2010-07-01T19:35:26.000Z</LastModified><ETag>&quot;1c11c1cacf1f1d111fab1ef1e1f1a1ee&quot;</ETag><Size>242</Size><Owner><ID>111111a11111b1c111fa11a111111ea11111d1111d11bed11a11eb11111de111</ID><DisplayName>myfakecompany</DisplayName></Owner><StorageClass>STANDARD</StorageClass></Contents></ListBucketResult>
 RESPONSE
 
-  FakeWeb.register_uri(:get, "https://#{bucket}.s3.amazonaws.com:443/?prefix=#{key}", :response => response)
+  FakeWeb.register_uri(:get, "https://#{bucket}.s3.amazonaws.com:443/?prefix=#{CGI.escape(key)}", :response => response)
 
   response = <<-RESPONSE
 HTTP/1.1 204 No Content
@@ -261,7 +261,7 @@ Server: AmazonS3
 
 RESPONSE
 
-  FakeWeb.register_uri(:put, "https://#{bucket}.s3.amazonaws.com:443/#{key}?acl", :response => response)
+  FakeWeb.register_uri(:put, "https://#{bucket}.s3.amazonaws.com:443/#{CGI.escape(key)}?acl", :response => response)
 end
 
 def fakeweb_s3_make_file_private_response(bucket, key)
@@ -275,10 +275,10 @@ Transfer-Encoding: chunked
 Server: AmazonS3
 
 <?xml version="1.0" encoding="UTF-8"?>
-<AccessControlPolicy xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Owner><ID>111111a11111b1c111fa11a111111ea11111d1111d11bed11a11eb11111de111</ID><DisplayName>cykod</DisplayName></Owner><AccessControlList><Grant><Grantee xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="CanonicalUser"><ID>111111a11111b1c111fa11a111111ea11111d1111d11bed11a11eb11111de111</ID><DisplayName>myfakecompany</DisplayName></Grantee><Permission>FULL_CONTROL</Permission></Grant><Grant><Grantee xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="Group"><URI>http://acs.amazonaws.com/groups/global/AllUsers</URI></Grantee><Permission>READ</Permission></Grant></AccessControlList></AccessControlPolicy>
+<AccessControlPolicy xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Owner><ID>111111a11111b1c111fa11a111111ea11111d1111d11bed11a11eb11111de111</ID><DisplayName>myfakecompany</DisplayName></Owner><AccessControlList><Grant><Grantee xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="CanonicalUser"><ID>111111a11111b1c111fa11a111111ea11111d1111d11bed11a11eb11111de111</ID><DisplayName>myfakecompany</DisplayName></Grantee><Permission>FULL_CONTROL</Permission></Grant><Grant><Grantee xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="Group"><URI>http://acs.amazonaws.com/groups/global/AllUsers</URI></Grantee><Permission>READ</Permission></Grant></AccessControlList></AccessControlPolicy>
 RESPONSE
 
-  FakeWeb.register_uri(:get, "https://#{bucket}.s3.amazonaws.com:443/#{key}?acl", :response => response)
+  FakeWeb.register_uri(:get, "https://#{bucket}.s3.amazonaws.com:443/#{CGI.escape(key)}?acl", :response => response)
 
   response = <<-RESPONSE
 HTTP/1.1 200 OK
@@ -290,10 +290,10 @@ Transfer-Encoding: chunked
 Server: AmazonS3
 
 <?xml version="1.0" encoding="UTF-8"?>
-<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Name>webiva-doug2</Name><Prefix>test.txt</Prefix><Marker></Marker><MaxKeys>1000</MaxKeys><IsTruncated>false</IsTruncated><Contents><Key>test.txt</Key><LastModified>2010-07-01T19:35:26.000Z</LastModified><ETag>&quot;1c11c1cacf1f1d111fab1ef1e1f1a1ee&quot;</ETag><Size>242</Size><Owner><ID>111111a11111b1c111fa11a111111ea11111d1111d11bed11a11eb11111de111</ID><DisplayName>cykod</DisplayName></Owner><StorageClass>STANDARD</StorageClass></Contents></ListBucketResult>
+<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Name>webiva-doug2</Name><Prefix>#{key}</Prefix><Marker></Marker><MaxKeys>1000</MaxKeys><IsTruncated>false</IsTruncated><Contents><Key>#{key}</Key><LastModified>2010-07-01T19:35:26.000Z</LastModified><ETag>&quot;1c11c1cacf1f1d111fab1ef1e1f1a1ee&quot;</ETag><Size>242</Size><Owner><ID>111111a11111b1c111fa11a111111ea11111d1111d11bed11a11eb11111de111</ID><DisplayName>myfakecompany</DisplayName></Owner><StorageClass>STANDARD</StorageClass></Contents></ListBucketResult>
 RESPONSE
 
-  FakeWeb.register_uri(:get, "https://#{bucket}.s3.amazonaws.com:443/?prefix=#{key}", :response => response)
+  FakeWeb.register_uri(:get, "https://#{bucket}.s3.amazonaws.com:443/?prefix=#{CGI.escape(key)}", :response => response)
 
   response = <<-RESPONSE
 HTTP/1.1 204 No Content
@@ -304,7 +304,7 @@ Server: AmazonS3
 
 RESPONSE
 
-  FakeWeb.register_uri(:put, "https://#{bucket}.s3.amazonaws.com:443/#{key}?acl", :response => response)
+  FakeWeb.register_uri(:put, "https://#{bucket}.s3.amazonaws.com:443/#{CGI.escape(key)}?acl", :response => response)
 end
 
 def fakeweb_cloudfront_distributions_response(origin='my-fake-origin.s3.amazonaws.com', aws_id='EJLGZ1G1CU1BZ')
