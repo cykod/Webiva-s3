@@ -52,12 +52,20 @@ class S3::DomainFileSupport
   def revision_support; true; end
 
   def create_remote_version!(version)
-    @connection.store(version.prefixed_filename,File.open(version.abs_filename),'private')
+    File.open(version.abs_filename) do |f|
+      @connection.store(version.prefixed_filename,f,'private')
+    end
     return true
   end
   
   def destroy_remote_version!(version)
     @connection.delete(version.prefixed_filename)
+  end
+
+  def copy_version_local!(version)
+    dir_name = File.dirname(version.abs_filename)
+    FileUtils.mkpath(dir_name) unless File.exists?(dir_name)
+    @connection.copy_local! version.prefixed_filename, version.abs_filename
   end
 
   def version_url(version)
