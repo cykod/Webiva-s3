@@ -172,9 +172,9 @@ class S3::AdminController < ModuleController
     def host(opts={})
       return @host if @host
 
-      if self.cname
+      if ! self.cname.blank?
         @host = self.cname
-      elsif self.cloud_front_distribution_info && self.cloud_front_distribution_info[:domain_name]
+      elsif self.cloud_front_distribution_info && ! self.cloud_front_distribution_info[:domain_name].blank?
         @host = self.cloud_front_distribution_info[:domain_name]
       else
         @host = self.connection.host
