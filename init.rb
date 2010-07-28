@@ -4,5 +4,7 @@
 webiva_remove_load_paths(__FILE__)
 
 config.gem 'right_aws'
-config.gem 'fakeweb'
+if RAILS_ENV=='test'
+  config.gem 'fakeweb'
+end
 
