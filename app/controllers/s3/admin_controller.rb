@@ -104,6 +104,34 @@ class S3::AdminController < ModuleController
       end
     end
 
+    def system_options
+      @system_options ||= Configuration.system_module_configuration 's3'
+    end
+
+    def access_key_id
+      if self.system_options
+        self.system_options['access_key_id']
+      else
+        @access_key_id
+      end
+    end
+
+    def secret_access_key
+      if self.system_options
+        self.system_options['secret_access_key']
+      else
+        @secret_access_key
+      end
+    end
+
+    def bucket
+      if self.system_options
+        self.system_options['bucket']
+      else
+        @bucket
+      end
+    end
+
     def connection
       @connection ||= S3::Bucket.new self.access_key_id, self.secret_access_key, self.bucket
     end
