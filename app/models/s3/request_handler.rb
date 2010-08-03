@@ -5,6 +5,15 @@ class S3::RequestHandler
     @controller = controller
   end
 
+  def post_process_stylesheet(css)
+  @options = S3::AdminController.module_options
+    if @controller.request.ssl?
+      options.secure_output(css)
+    else
+      css
+    end
+  end
+
   def post_process(output)
     if output.page? && @controller.request.ssl?
       @options = S3::AdminController.module_options

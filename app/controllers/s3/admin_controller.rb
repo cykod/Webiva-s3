@@ -8,6 +8,7 @@ class S3::AdminController < ModuleController
   register_handler :website, :file,  "S3::DomainFileSupport"
                   
   register_handler :page, :post_process, "S3::RequestHandler"
+  register_handler :stylesheet, :post_process, "S3::RequestHandler"
 
   def options
    cms_page_info [ ["Options",url_for(:controller => '/options') ], ["Modules",url_for(:controller => "/modules")], "S3 Options"], "options"
