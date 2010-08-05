@@ -152,7 +152,7 @@ describe DomainFile do
     fakeweb_s3_make_file_public_response('my-bucket', @file3.prefixed_filename)
 
     DomainFileVersion.should_receive(:generate_version_hash).once.and_return('XXXXXXX')
-    fakeweb_s3_store_file_response('my-bucket', "#{@file2.prefix}/v/XXXXXXX/test.txt")
+    fakeweb_s3_store_file_response('my-bucket', "#{DomainFile.storage_subdir}/#{@file2.prefix}/v/XXXXXXX/test.txt")
 
     fakeweb_s3_store_file_response('my-bucket', "#{DomainFile.storage_subdir}/#{@file2.prefix}/1/#{@file3.name}")
     fakeweb_s3_store_file_response('my-bucket', "#{DomainFile.storage_subdir}/#{@file2.prefix}/1/icon/#{@file3.name}")
