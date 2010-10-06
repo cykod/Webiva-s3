@@ -159,9 +159,11 @@ describe DomainFile do
     fakeweb_s3_store_file_response('my-bucket', "#{DomainFile.storage_subdir}/#{@file2.prefix}/1/thumb/#{@file3.name}")
     fakeweb_s3_store_file_response('my-bucket', "#{DomainFile.storage_subdir}/#{@file2.prefix}/1/preview/#{@file3.name}")
     fakeweb_s3_store_file_response('my-bucket', "#{DomainFile.storage_subdir}/#{@file2.prefix}/1/small/#{@file3.name}")
+    fakeweb_s3_store_file_response('my-bucket', "#{DomainFile.storage_subdir}/#{@file2.prefix}/1/tiny/#{@file3.name}")
 
     fakeweb_s3_delete_file_response('my-bucket', @file2.prefixed_filename)
     fakeweb_s3_delete_file_response('my-bucket', @file3.prefixed_filename)
+    fakeweb_s3_delete_file_response('my-bucket', @file3.prefixed_filename('tiny'))
     fakeweb_s3_delete_file_response('my-bucket', @file3.prefixed_filename('icon'))
     fakeweb_s3_delete_file_response('my-bucket', @file3.prefixed_filename('thumb'))
     fakeweb_s3_delete_file_response('my-bucket', @file3.prefixed_filename('preview'))
