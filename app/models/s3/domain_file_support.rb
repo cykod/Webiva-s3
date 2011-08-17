@@ -127,15 +127,10 @@ class S3::DomainFileSupport
   def file_sizes
    # Get the original size
     sizes = [nil] 
-    # Add in any additional image sizes of necessary
-    sizes += DomainFile.image_sizes.collect() { |sz| sz[0].to_s } if(@df.file_type == 'img' || @df.file_type == 'thm')
-    if(@df.file_type == 'img' || @df.file_type == 'thm')
 
-      DomainFileSize.custom_sizes.each do |sym,size_opts|
-        sizes << sym.to_s
-      end
+    if @df.file_type == 'thm' || @df.file_type == 'img'
+      sizes += @df.thumb_size_names.keys - [ :original ]
     end
-    
     
     sizes
   end
