@@ -46,8 +46,14 @@ class S3::Bucket
   end
 
   def copy_local!(key, filename)
-    File.open(filename, 'w') do |file|
-      file.write self.bucket.get(key)
+    begin
+      File.open(filename, 'w') do |file|
+        file.write self.bucket.get(key)
+      end
+      return true
+    rescue RightAws::AwsError => e
+      FileUtils.rm(filename)
+      return false
     end
   end
 
