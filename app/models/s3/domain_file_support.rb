@@ -27,6 +27,15 @@ class S3::DomainFileSupport
   def copy_remote!(size=nil)
     begin
       (size ? [ size ] : file_sizes).each do |size|
+        if !File.exists?(@df.local_filename(size))
+          sz = DomainFileSize.find_by_size_name(size)
+          if sz
+            sz.execute(@df)
+          else
+            @df.generate_thumbnails(true)
+          end
+        end
+
         @connection.store(self.prefixed_filename(size),
                                 File.open(@df.local_filename(size)),
                                 @df.private? ? 'private' : 'public-read') if File.exists?(@df.local_filename(size))
