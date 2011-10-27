@@ -35,9 +35,9 @@ class S3::Bucket
   # Store data on S3
   #
   # The +perms+ param can take these values: 'private', 'public-read', 'public-read-write' and 'authenticated-read'. 
-  def store(key, data, perm=nil)
+  def store(key, data, perm=nil, mime_type=nil)
     return false unless self.class.valid_key?(key)
-    self.bucket.put(key, data, {}, perm)
+    self.bucket.put(key, data, {}, perm, { 'content-type' => mime_type})
   end
 
   def delete(key)

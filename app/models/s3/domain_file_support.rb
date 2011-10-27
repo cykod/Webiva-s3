@@ -38,7 +38,8 @@ class S3::DomainFileSupport
 
         @connection.store(self.prefixed_filename(size),
                                 File.open(@df.local_filename(size)),
-                                @df.private? ? 'private' : 'public-read') if File.exists?(@df.local_filename(size))
+                                @df.private? ? 'private' : 'public-read',
+                                @df.mime_type) if File.exists?(@df.local_filename(size))
       end
       return true
     rescue Exception => e
@@ -62,7 +63,7 @@ class S3::DomainFileSupport
 
   def create_remote_version!(version)
     File.open(version.abs_filename) do |f|
-      @connection.store(version.prefixed_filename,f,'private')
+      @connection.store(version.prefixed_filename,f,'private',@df.mime_type)
     end
     return true
   end
